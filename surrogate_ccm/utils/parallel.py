@@ -1,21 +1,44 @@
 """Parallel execution wrapper with progress bar."""
 
-import multiprocessing
-import threading
+import contextlib
 
+import joblib
 from joblib import Parallel, delayed
 from tqdm import tqdm
+
+
+@contextlib.contextmanager
+def _tqdm_joblib(pbar):
+    """Patch joblib to update a tqdm progress bar after each batch.
+
+    Works with any joblib version by monkey-patching the internal
+    BatchCompletionCallBack class.
+    """
+    class _TqdmCallback(joblib.parallel.BatchCompletionCallBack):
+        def __call__(self, *args, **kwargs):
+            pbar.update(n=self.batch_size)
+            return super().__call__(*args, **kwargs)
+
+    old_cls = joblib.parallel.BatchCompletionCallBack
+    joblib.parallel.BatchCompletionCallBack = _TqdmCallback
+    try:
+        yield pbar
+    finally:
+        joblib.parallel.BatchCompletionCallBack = old_cls
+        pbar.close()
 
 
 def parallel_map(func, items, n_jobs=-1, desc=None, **kwargs):
     """Apply func to each item in parallel with a progress bar.
 
-    The progress bar tracks actual job completion using a thread-safe counter.
+    Uses process-based parallelism (loky backend, the joblib default)
+    to bypass the GIL for true multi-core utilisation.
 
     Parameters
     ----------
     func : callable
-        Function to apply to each item.
+        Function to apply to each item.  Must be picklable (top-level
+        function with picklable arguments).
     items : iterable
         Items to process.
     n_jobs : int
@@ -36,22 +59,9 @@ def parallel_map(func, items, n_jobs=-1, desc=None, **kwargs):
     if n_jobs == 1 or n == 0:
         return [func(item) for item in tqdm(items, desc=desc)]
 
-    # For multi-process parallel execution, use prefer="threads" backend
-    # so the tqdm pbar can be updated from worker threads.
-    pbar = tqdm(total=n, desc=desc)
-    lock = threading.Lock()
-
-    def _tracked(item):
-        result = func(item)
-        with lock:
-            pbar.update(1)
-        return result
-
-    try:
-        results = Parallel(n_jobs=n_jobs, prefer="threads", **kwargs)(
-            delayed(_tracked)(item) for item in items
+    with _tqdm_joblib(tqdm(total=n, desc=desc)):
+        results = Parallel(n_jobs=n_jobs, **kwargs)(
+            delayed(func)(item) for item in items
         )
-    finally:
-        pbar.close()
 
     return results
