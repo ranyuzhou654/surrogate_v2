@@ -73,8 +73,10 @@ def generate_surrogate(x, method="iaaft", n_surrogates=100, seed=None, **kwargs)
             min_dist=kwargs.get("min_dist", 7),
             rng=rng,
         )
+        # Pass E/tau explicitly to avoid redundant select_parameters calls
+        twin_kwargs = {**kwargs, "E": E, "tau": tau}
         for i in range(n_surrogates):
-            surrogates[i] = func(x, rng=rng, _twin_cache=cache, **kwargs)
+            surrogates[i] = func(x, rng=rng, _twin_cache=cache, **twin_kwargs)
     else:
         for i in range(n_surrogates):
             surrogates[i] = func(x, rng=rng, **kwargs)
