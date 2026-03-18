@@ -1,0 +1,39 @@
+# Smoke test config for surrogate robustness experiment
+# 2 systems × 1 method × 2 sweep values × 2 reps ≈ 1-2 min
+
+seed: 42
+
+time_series:
+  T: 500
+  transient: 200
+
+surrogate_robustness:
+  systems: [logistic, lorenz]
+  methods: [fft]
+  n_surrogates: 19
+  N: 5
+  topology: ER
+  er_p: 0.3
+  n_reps: 2
+  fdr: false
+
+  T_sweep:
+    values: [300, 500]
+    transient: 200
+
+  coupling_sweep:
+    logistic: [0.05, 0.1]
+    lorenz:   [0.5, 1.0]
+
+  obs_noise_sweep:
+    values: [0.0, 0.05]
+
+  dyn_noise_sweep:
+    values: [0.0, 0.01]
+
+  coupling:
+    logistic: 0.1
+    lorenz: 1.0
+
+n_jobs: 1
+output_dir: results/smoke_test

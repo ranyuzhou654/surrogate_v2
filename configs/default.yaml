@@ -1,0 +1,192 @@
+# SE-CCM Default Configuration
+
+# Random seed base
+seed: 42
+
+# Time series generation
+time_series:
+  T: 3000           # Total time steps
+  transient: 1000   # Transient steps to discard
+
+# System parameters
+logistic:
+  r: 3.9
+
+lorenz:
+  sigma: 10.0
+  rho: 28.0
+  beta: 2.6667      # 8/3
+  dt: 0.01
+
+henon:
+  a: 1.1            # Lower than classic 1.4 for stability under coupling
+  b: 0.3
+
+# CCM parameters
+ccm:
+  E_max: 10          # Maximum embedding dimension to test
+  tau_max: 50        # Maximum delay to test
+  k: null            # k neighbors (null = E+1)
+  n_library_sizes: 20  # Number of library sizes for convergence
+
+# Surrogate parameters
+surrogate:
+  methods:
+    - fft
+    - aaft
+    - iaaft
+    - timeshift
+    - random_reorder
+  n_surrogates: 100
+  iaaft_max_iter: 200
+
+# Statistical testing
+testing:
+  alpha: 0.05        # Significance level
+  fdr_method: bh     # Benjamini-Hochberg
+
+# Experiment: bivariate
+bivariate:
+  systems:
+    - logistic
+    - lorenz
+    - henon
+  # Per-system coupling strengths (Lorenz needs stronger coupling
+  # because diffusive x-only coupling is weak relative to intrinsic dynamics)
+  coupling_strengths:
+    logistic: 0.1
+    lorenz: 1.0
+    henon: 0.1
+  n_reps: 10
+
+# Experiment: coupling strength sweep
+# Per-system coupling values (Lorenz needs stronger coupling due to
+# diffusive x-only coupling; Hénon diverges above ~0.1 with a=1.1)
+coupling_strength:
+  systems:
+    - logistic
+    - lorenz
+    - henon
+  topologies:
+    - ER
+    - WS
+    - ring
+  N: 10
+  coupling_values:
+    logistic: [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5]
+    lorenz:   [0.1, 0.5, 1.0, 2.0, 3.0, 5.0, 8.0]
+    henon:    [0.01, 0.02, 0.03, 0.05, 0.07, 0.1]
+  n_reps: 20
+  er_p: 0.3
+  ws_k: 4
+  ws_p: 0.3
+
+# Experiment: noise
+noise:
+  systems:
+    - logistic
+    - lorenz
+    - henon
+  topologies:
+    - ER
+  N: 10
+  coupling:
+    logistic: 0.1
+    lorenz: 1.0
+    henon: 0.05
+  noise_levels:
+    - 0.0
+    - 0.01
+    - 0.05
+    - 0.1
+  n_reps: 20
+  er_p: 0.3
+
+# Experiment: network topology
+network_topology:
+  systems:
+    - logistic
+  topologies:
+    - ER
+    - WS
+    - ring
+  N_values:
+    - 10
+    - 20
+    - 30
+  coupling:
+    logistic: 0.1
+    lorenz: 1.0
+    henon: 0.05
+  n_reps: 20
+  er_p: 0.3
+  ws_k: 4
+  ws_p: 0.3
+
+# Experiment: surrogate method comparison
+surrogate_comparison:
+  systems: [logistic, lorenz, henon, rossler, hindmarsh_rose, fitzhugh_nagumo, kuramoto]
+  methods: [fft, aaft, iaaft, timeshift, random_reorder]
+  n_surrogates_values: [19, 49, 99, 199, 499]
+  N: 10
+  topology: ER
+  coupling:
+    logistic: 0.1
+    lorenz: 1.0
+    henon: 0.05
+    rossler: 0.2
+    hindmarsh_rose: 0.05
+    fitzhugh_nagumo: 0.05
+    kuramoto: 0.1
+  n_reps: 20
+  er_p: 0.3
+
+# Experiment: surrogate robustness (4 sub-experiments)
+surrogate_robustness:
+  systems: [logistic, lorenz, henon, rossler, hindmarsh_rose, fitzhugh_nagumo, kuramoto]
+  methods: [fft, aaft, timeshift]
+  n_surrogates: 99
+  N: 10
+  topology: ER
+  er_p: 0.3
+  n_reps: 10
+  fdr: false
+
+  # Sub-A: Time series length sweep
+  T_sweep:
+    values: [500, 1000, 2000, 3000, 5000]
+    transient: 1000
+
+  # Sub-B: Coupling strength sweep (per-system)
+  coupling_sweep:
+    logistic:  [0.01, 0.02, 0.05, 0.1, 0.2, 0.3]
+    lorenz:    [0.1, 0.5, 1.0, 2.0, 5.0, 8.0]
+    henon:     [0.01, 0.02, 0.03, 0.05, 0.07, 0.1]
+    rossler:   [0.05, 0.1, 0.2, 0.5, 1.0, 2.0]
+    hindmarsh_rose: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5]
+    fitzhugh_nagumo: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5]
+    kuramoto:  [0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
+
+  # Sub-C: Observation noise sweep
+  obs_noise_sweep:
+    values: [0.0, 0.01, 0.05, 0.1, 0.2]
+
+  # Sub-D: Dynamical noise sweep
+  dyn_noise_sweep:
+    values: [0.0, 0.001, 0.005, 0.01, 0.05]
+
+  # Default coupling (used when not sweeping coupling)
+  coupling:
+    logistic: 0.1
+    lorenz: 1.0
+    henon: 0.05
+    rossler: 0.2
+    hindmarsh_rose: 0.05
+    fitzhugh_nagumo: 0.05
+    kuramoto: 0.1
+
+# Parallelization
+n_jobs: -1
+
+# Output
+output_dir: results
