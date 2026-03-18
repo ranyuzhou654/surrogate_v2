@@ -151,23 +151,30 @@ class SECCM:
             w = w / (w.sum(axis=1, keepdims=True) + eps_val)
             node_trees[i] = (M_x, idxs, w, offset, T_eff)
 
+        # Pre-generate surrogates per cause variable j (shared across
+        # all effect nodes i), avoiding 9× redundant generation.
+        surr_cache = {}
+        cause_iter = range(N)
+        if self.verbose:
+            cause_iter = tqdm(cause_iter, desc="Generating surrogates")
+        for j in cause_iter:
+            seed_j = None
+            if self.seed is not None:
+                seed_j = self.seed + j
+            surr_cache[j] = generate_surrogate(
+                data[:, j],
+                method=self.surrogate_method,
+                n_surrogates=self.n_surrogates,
+                seed=seed_j,
+                **surr_kwargs,
+            )
+
         for i, j in pair_iter:
             E_i, tau_i = params[i]
             rho_obs = ccm_matrix[i, j]
             M_x, idxs, w, offset, T_eff = node_trees[i]
 
-            # Surrogateize the CAUSE variable j
-            seed_ij = None
-            if self.seed is not None:
-                seed_ij = self.seed + i * N + j
-
-            surrogates_j = generate_surrogate(
-                data[:, j],
-                method=self.surrogate_method,
-                n_surrogates=self.n_surrogates,
-                seed=seed_ij,
-                **surr_kwargs,
-            )
+            surrogates_j = surr_cache[j]
 
             # Compute CCM for each surrogate (reuse pre-built KDTree)
             rho_surr = _ccm_surrogate_batch(
