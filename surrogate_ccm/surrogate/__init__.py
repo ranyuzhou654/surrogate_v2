@@ -40,7 +40,9 @@ def generate_surrogate(x, method="iaaft", n_surrogates=100, seed=None, **kwargs)
     x : ndarray, shape (T,)
         Input time series.
     method : str
-        Surrogate method name: 'fft', 'aaft', 'iaaft', 'timeshift', 'random_reorder'.
+        Surrogate method name: 'fft', 'aaft', 'iaaft', 'timeshift',
+        'random_reorder', 'cycle_shuffle', 'twin', 'phase',
+        'small_shuffle', 'truncated_fourier'.
     n_surrogates : int
         Number of surrogates to generate.
     seed : int, optional

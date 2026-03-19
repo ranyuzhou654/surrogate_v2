@@ -95,11 +95,16 @@ def signal_profile(x, top_k=3):
     decay = autocorrelation_decay_time(x)
 
     # Classification logic
+    # Empirical finding: for high-SC oscillatory systems (Rössler, Kuramoto),
+    # phase surrogate destroys too much structure (delta < -0.1) while
+    # spectral methods (iaaft, fft) preserve the right null structure.
+    # cycle_shuffle works best for moderately oscillatory systems.
     if sc > 0.8 and decay > 15:
-        # Near-sinusoidal: cycles are too similar for cycle_shuffle
-        # Phase surrogate breaks phase coupling while preserving envelope
+        # Near-sinusoidal: spectral surrogates preserve oscillatory null well.
+        # iaaft preserves both spectrum and amplitude distribution, giving
+        # tight null distributions and low FPR.
         signal_type = "phase_coupled_oscillatory"
-        method = "phase"
+        method = "iaaft"
     elif sc > 0.5 and decay > 15:
         # Narrowband oscillatory with distinct cycle shapes
         signal_type = "narrowband_oscillatory"

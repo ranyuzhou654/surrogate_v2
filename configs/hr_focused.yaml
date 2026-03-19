@@ -35,7 +35,7 @@ surrogate_robustness:
     values: [0.0, 0.001, 0.005, 0.01, 0.05]
 
   coupling:
-    hindmarsh_rose: 0.05
+    hindmarsh_rose: 0.1
 
 n_jobs: 8
 output_dir: results/hr_focused

@@ -22,7 +22,8 @@ class HindmarshRoseNetwork:
     """
 
     def __init__(self, adj, coupling, a=1.0, b=3.0, c=1.0, d=5.0,
-                 r=0.01, s=4.0, x_R=-1.6, I_ext=3.5, dt=0.05):
+                 r=0.01, s=4.0, x_R=-1.6, I_ext=3.5, dt=0.05,
+                 subsample=5):
         self.adj = np.asarray(adj, dtype=float)
         self.coupling = coupling
         self.a = a
@@ -34,6 +35,7 @@ class HindmarshRoseNetwork:
         self.x_R = x_R
         self.I_ext = I_ext
         self.dt = dt
+        self.subsample = subsample
         self.N = adj.shape[0]
 
     def _deriv(self, t, state):
@@ -68,26 +70,32 @@ class HindmarshRoseNetwork:
         """
         rng = np.random.default_rng(seed)
         N = self.N
-        total = T + transient
+        # Integrate at finer resolution, then subsample to output T points.
+        # With dt=0.05 and subsample=5, effective dt_eff=0.25, matching
+        # the slow coupling timescale (~1/r = 100 model time units).
+        ss = max(self.subsample, 1)
+        total_fine = (T + transient) * ss
 
         state0 = rng.uniform(-2.0, 2.0, size=3 * N)
 
         if dyn_noise_std > 0:
             state = state0.copy()
-            data_all = np.empty((total, 3 * N))
+            data_all = np.empty((total_fine, N))
             sqrt_dt = np.sqrt(self.dt)
-            for t in range(total):
-                data_all[t] = state
+            for t in range(total_fine):
+                data_all[t] = state[0:N]
                 d = self._deriv(t * self.dt, state)
                 noise = rng.normal(0, dyn_noise_std, size=N)
                 state[0:N] += d[0:N] * self.dt + noise * sqrt_dt
                 state[N:] += d[N:] * self.dt
                 if not np.all(np.isfinite(state)):
                     raise RuntimeError(f"HindmarshRose SDE diverged at step {t}.")
-            data = data_all[transient:, 0:N]
+            # Subsample after transient
+            transient_fine = transient * ss
+            data = data_all[transient_fine::ss][:T]
         else:
-            t_span = (0, total * self.dt)
-            t_eval = np.linspace(0, total * self.dt, total)
+            t_span = (0, total_fine * self.dt)
+            t_eval = np.linspace(0, total_fine * self.dt, total_fine)
 
             sol = solve_ivp(
                 self._deriv, t_span, state0,
@@ -98,7 +106,9 @@ class HindmarshRoseNetwork:
             if sol.status != 0:
                 raise RuntimeError(f"HindmarshRose ODE integration failed: {sol.message}")
 
-            data = sol.y[0:N, transient:].T
+            # Subsample after transient
+            transient_fine = transient * ss
+            data = sol.y[0:N, transient_fine::ss].T[:T]
 
         if not np.all(np.isfinite(data)):
             raise RuntimeError("HindmarshRose produced non-finite values.")

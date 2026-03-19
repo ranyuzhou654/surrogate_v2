@@ -52,7 +52,7 @@ surrogate_robustness:
     lorenz: 1.0
     henon: 0.05
     rossler: 0.2
-    hindmarsh_rose: 0.05
+    hindmarsh_rose: 0.1
     kuramoto: 0.1
 
 n_jobs: 8

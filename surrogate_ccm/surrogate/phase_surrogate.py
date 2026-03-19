@@ -15,7 +15,27 @@ import numpy as np
 from scipy.signal import hilbert
 
 
-def phase_surrogate(x, rng=None, block_size=1):
+def _estimate_dominant_period(x):
+    """Estimate the dominant oscillation period from the power spectrum.
+
+    Returns
+    -------
+    period : int
+        Dominant period in samples, or 0 if no clear periodicity.
+    """
+    x_c = x - np.mean(x)
+    fft_vals = np.fft.rfft(x_c)
+    power = np.abs(fft_vals) ** 2
+    power[0] = 0  # exclude DC
+    if power.sum() < 1e-15:
+        return 0
+    peak_idx = np.argmax(power)
+    if peak_idx == 0:
+        return 0
+    return len(x) // peak_idx
+
+
+def phase_surrogate(x, rng=None, block_size="auto"):
     """Generate a phase surrogate by shuffling phase increments.
 
     Algorithm:
@@ -32,9 +52,12 @@ def phase_surrogate(x, rng=None, block_size=1):
         Input time series (should be approximately oscillatory).
     rng : numpy.random.Generator, optional
         Random number generator.
-    block_size : int
+    block_size : int or "auto"
         Size of blocks for shuffling phase increments.
-        1 = fully independent shuffling (default).
+        "auto" (default): estimate dominant period and use period // 2,
+            preserving within-cycle phase dynamics while destroying
+            inter-cycle coupling. Falls back to 1 if no periodicity.
+        1 = fully independent shuffling.
         Larger values preserve short-range phase dynamics.
 
     Returns
@@ -47,6 +70,11 @@ def phase_surrogate(x, rng=None, block_size=1):
 
     x = np.asarray(x, dtype=float).ravel()
     T = len(x)
+
+    # Resolve auto block_size
+    if block_size == "auto":
+        period = _estimate_dominant_period(x)
+        block_size = max(period // 2, 1) if period >= 4 else 1
 
     # Subtract mean for cleaner Hilbert transform
     x_mean = np.mean(x)

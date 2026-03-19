@@ -927,7 +927,7 @@ def run_surrogate_robustness_experiment(config, output_dir, n_jobs=-1):
     topology = cfg.get("topology", "ER")
     coupling_map = cfg.get("coupling", {
         "logistic": 0.1, "lorenz": 1.0, "henon": 0.05,
-        "rossler": 0.2, "hindmarsh_rose": 0.05,
+        "rossler": 0.2, "hindmarsh_rose": 0.1,
         "fitzhugh_nagumo": 0.05, "kuramoto": 0.1,
     })
     n_reps = cfg.get("n_reps", 10)
@@ -942,7 +942,8 @@ def run_surrogate_robustness_experiment(config, output_dir, n_jobs=-1):
     seccm_cfg = cfg.get("seccm_kwargs", {})
     extra_seccm_kwargs = {}
     for key in ("theiler_w", "adaptive_rho", "E_method",
-                "convergence_filter", "convergence_threshold"):
+                "convergence_filter", "convergence_threshold",
+                "min_rho", "adaptive_rho_quantile", "iaaft_max_iter"):
         if key in seccm_cfg:
             extra_seccm_kwargs[key] = seccm_cfg[key]
 

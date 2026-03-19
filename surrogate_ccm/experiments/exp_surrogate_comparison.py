@@ -38,7 +38,7 @@ def _run_single_rep(args):
     enabling paired comparison.
     """
     (system_name, topology, N, eps, method, n_surr,
-     ts_cfg, seed, net_kwargs, fdr) = args
+     ts_cfg, seed, net_kwargs, fdr, extra_seccm_kwargs) = args
 
     T = ts_cfg.get("T", 3000)
     transient = ts_cfg.get("transient", 1000)
@@ -55,11 +55,12 @@ def _run_single_rep(args):
             fdr=fdr,
             seed=seed,
             verbose=False,
+            **extra_seccm_kwargs,
         )
         seccm.fit(data)
         metrics = seccm.score(adj)
         return metrics
-    except RuntimeError:
+    except Exception:
         return None
 
 
@@ -84,6 +85,15 @@ def run_surrogate_comparison_experiment(config, output_dir, n_jobs=-1):
     seed_base = config.get("seed", 42)
     ts_cfg = config.get("time_series", {})
 
+    # Extra SECCM kwargs from config
+    seccm_cfg = cfg.get("seccm_kwargs", {})
+    extra_seccm_kwargs = {}
+    for key in ("theiler_w", "adaptive_rho", "E_method",
+                "convergence_filter", "convergence_threshold",
+                "min_rho", "adaptive_rho_quantile", "iaaft_max_iter"):
+        if key in seccm_cfg:
+            extra_seccm_kwargs[key] = seccm_cfg[key]
+
     net_kwargs = {"p": er_p}
 
     # Build all combos
@@ -103,7 +113,7 @@ def run_surrogate_comparison_experiment(config, output_dir, n_jobs=-1):
 
         args_list = [
             (sys_name, topology, N, eps, method, n_surr,
-             ts_cfg, seed_base + rep, net_kwargs, fdr)
+             ts_cfg, seed_base + rep, net_kwargs, fdr, extra_seccm_kwargs)
             for rep in range(n_reps)
         ]
 

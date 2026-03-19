@@ -79,7 +79,7 @@ class SECCM:
         adaptive_rho_quantile=0.95,
         theiler_w="auto",
         E_method="simplex",
-        convergence_filter=False,
+        convergence_filter=True,
         convergence_threshold=0.0,
     ):
         self.surrogate_method = surrogate_method

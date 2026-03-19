@@ -31,7 +31,7 @@ class RosslerNetwork:
     """
 
     def __init__(self, adj, coupling, a=0.2, b=0.2, c=5.7, dt=0.05,
-                 hetero_sigma=0.0, max_retries=5):
+                 hetero_sigma=0.0, max_retries=10):
         self.adj = np.asarray(adj, dtype=float)
         self.coupling = coupling
         self.a = a
