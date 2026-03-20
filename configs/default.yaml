@@ -60,7 +60,7 @@ bivariate:
   # because diffusive x-only coupling is weak relative to intrinsic dynamics)
   coupling_strengths:
     logistic: 0.1
-    lorenz: 1.0
+    lorenz: 3.0
     henon: 0.1
   n_reps: 10
 
@@ -79,7 +79,7 @@ coupling_strength:
   N: 10
   coupling_values:
     logistic: [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5]
-    lorenz:   [0.1, 0.5, 1.0, 2.0, 3.0, 5.0, 8.0]
+    lorenz:   [0.3, 1.5, 3.0, 5.0, 8.0, 15.0, 22.0]
     henon:    [0.01, 0.02, 0.03, 0.05, 0.07, 0.1]
   n_reps: 20
   er_p: 0.3
@@ -97,7 +97,7 @@ noise:
   N: 10
   coupling:
     logistic: 0.1
-    lorenz: 1.0
+    lorenz: 3.0
     henon: 0.05
   noise_levels:
     - 0.0
@@ -121,7 +121,7 @@ network_topology:
     - 30
   coupling:
     logistic: 0.1
-    lorenz: 1.0
+    lorenz: 3.0
     henon: 0.05
   n_reps: 20
   er_p: 0.3
@@ -137,7 +137,7 @@ surrogate_comparison:
   topology: ER
   coupling:
     logistic: 0.1
-    lorenz: 1.0
+    lorenz: 3.0
     henon: 0.05
     rossler: 0.2
     hindmarsh_rose: 0.1
@@ -171,7 +171,7 @@ surrogate_robustness:
   # Sub-B: Coupling strength sweep (per-system)
   coupling_sweep:
     logistic:  [0.01, 0.02, 0.05, 0.1, 0.2, 0.3]
-    lorenz:    [0.1, 0.5, 1.0, 2.0, 5.0, 8.0]
+    lorenz:    [0.3, 1.5, 3.0, 5.0, 15.0, 22.0]
     henon:     [0.01, 0.02, 0.03, 0.05, 0.07, 0.1]
     rossler:   [0.05, 0.1, 0.2, 0.5, 1.0, 2.0]
     hindmarsh_rose: [0.01, 0.02, 0.05, 0.1, 0.2, 0.5]
@@ -189,7 +189,7 @@ surrogate_robustness:
   # Default coupling (used when not sweeping coupling)
   coupling:
     logistic: 0.1
-    lorenz: 1.0
+    lorenz: 3.0
     henon: 0.05
     rossler: 0.2
     hindmarsh_rose: 0.1

@@ -29,7 +29,7 @@ surrogate_comparison:
   topology: ER
   coupling:
     logistic: 0.1
-    lorenz: 1.0
+    lorenz: 3.0
     henon: 0.05
     rossler: 0.2
     hindmarsh_rose: 0.1
