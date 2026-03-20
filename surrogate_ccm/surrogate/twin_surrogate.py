@@ -120,13 +120,20 @@ def _find_twins_hashed(neighbors, min_dist=7):
     return twins
 
 
-def _construct_trajectory(x, twins, N, rng):
-    """Walk the attractor, randomly switching at twin points."""
+def _construct_trajectory(x_aligned, twins, N, rng):
+    """Walk the attractor, randomly switching at twin points.
+
+    Parameters
+    ----------
+    x_aligned : ndarray, shape (N,)
+        Scalar values aligned with embedded states, i.e. x[offset:offset+N]
+        where offset = (E-1)*tau.  State X[k] corresponds to x_aligned[k].
+    """
     surr = np.empty(N)
     k = rng.integers(0, N)
 
     for j in range(N):
-        surr[j] = x[k]
+        surr[j] = x_aligned[k]
         tw = twins[k]
         q = len(tw)
         if q == 0:
@@ -231,10 +238,12 @@ def twin_surrogate(x, rng=None, E=None, tau=None, epsilon=None,
     twins = cache["twins"]
 
     # --- Construct surrogate trajectory ---
-    surr_core = _construct_trajectory(x, twins, N, rng)
+    # Align scalar values with embedded states: X[k] corresponds to x[offset+k]
+    offset = (cache["E"] - 1) * cache["tau"]
+    x_aligned = x[offset:offset + N]
+    surr_core = _construct_trajectory(x_aligned, twins, N, rng)
 
     # --- Restore original length ---
-    offset = (cache["E"] - 1) * cache["tau"]
     if offset > 0:
         surr = np.concatenate([x[:offset], surr_core])
     else:
