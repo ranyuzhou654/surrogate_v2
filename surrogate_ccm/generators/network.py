@@ -31,6 +31,8 @@ def generate_network(topology, N, seed=None, **kwargs):
     """
     topology = topology.upper()
 
+    rng = np.random.default_rng(seed)
+
     if topology == "ER":
         p = kwargs.get("p", kwargs.get("er_p", 0.3))
         G = nx.erdos_renyi_graph(N, p, directed=True, seed=seed)
@@ -38,7 +40,15 @@ def generate_network(topology, N, seed=None, **kwargs):
     elif topology == "WS":
         k = kwargs.get("k", kwargs.get("ws_k", 4))
         p = kwargs.get("p", kwargs.get("ws_p", 0.3))
-        G = nx.watts_strogatz_graph(N, k, p, seed=seed).to_directed()
+        G_undirected = nx.watts_strogatz_graph(N, k, p, seed=seed)
+        # Randomly orient each undirected edge to avoid full reciprocity
+        G = nx.DiGraph()
+        G.add_nodes_from(range(N))
+        for u, v in G_undirected.edges():
+            if rng.random() < 0.5:
+                G.add_edge(u, v)
+            else:
+                G.add_edge(v, u)
 
     elif topology == "RING":
         k = kwargs.get("k", 1)
@@ -46,8 +56,12 @@ def generate_network(topology, N, seed=None, **kwargs):
         G.add_nodes_from(range(N))
         for i in range(N):
             for offset in range(1, k + 1):
-                G.add_edge((i - offset) % N, i)
-                G.add_edge((i + offset) % N, i)
+                j = (i + offset) % N
+                # Randomly orient each neighbor pair
+                if rng.random() < 0.5:
+                    G.add_edge(j, i)
+                else:
+                    G.add_edge(i, j)
 
     else:
         raise ValueError(f"Unknown topology: {topology}")
