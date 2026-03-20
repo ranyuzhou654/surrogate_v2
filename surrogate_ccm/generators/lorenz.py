@@ -40,8 +40,10 @@ class LorenzNetwork:
         Y = state[N : 2 * N]
         Z = state[2 * N : 3 * N]
 
-        # Coupling term: sum_j A[i,j] * (x_j - x_i)
-        coupling_term = self.adj @ X - self.adj.sum(axis=1) * X
+        # Coupling term: sum_j A[i,j] * (x_j - x_i) / k_in
+        k_in = self.adj.sum(axis=1)
+        k_in_safe = np.where(k_in > 0, k_in, 1.0)
+        coupling_term = (self.adj @ X - k_in * X) / k_in_safe
 
         dX = self.sigma * (Y - X) + self.coupling * coupling_term
         dY = X * (self.rho - Z) - Y
