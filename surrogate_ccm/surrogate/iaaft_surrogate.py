@@ -36,7 +36,10 @@ def iaaft_surrogate(x, rng=None, max_iter=200, tol=1e-8):
     surr = x.copy()
     rng.shuffle(surr)
 
-    prev_spectrum = np.zeros_like(target_amplitudes)
+    # Normalization factor for relative spectral error
+    target_power = np.mean(target_amplitudes ** 2)
+    if target_power < 1e-30:
+        target_power = 1.0
 
     # Pre-allocate rank-order output to avoid repeated allocation
     ranked = np.empty(T, dtype=x.dtype)
@@ -55,11 +58,10 @@ def iaaft_surrogate(x, rng=None, max_iter=200, tol=1e-8):
         ranked[order] = sorted_x
         surr = ranked.copy()
 
-        # Check convergence (reuse the rfft we'll need next iteration)
+        # Check convergence: distance to target spectrum (not just stationarity)
         current_spectrum = np.abs(np.fft.rfft(surr))
-        diff = np.mean((current_spectrum - prev_spectrum) ** 2)
-        if diff < tol:
+        spectral_error = np.mean((current_spectrum - target_amplitudes) ** 2) / target_power
+        if spectral_error < tol:
             break
-        prev_spectrum = current_spectrum
 
     return surr
