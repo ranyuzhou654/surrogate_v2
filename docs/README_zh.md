@@ -54,11 +54,11 @@ from surrogate_ccm.testing import SECCM
 
 # 创建 10 节点耦合 Lorenz 网络
 adj = generate_network("ER", N=10, seed=42, p=0.3)
-system = create_system("lorenz", adj, coupling=1.0)
+system = create_system("lorenz", adj, coupling=3.0)
 data = system.generate(T=3000, transient=1000, seed=42)  # 形状: (3000, 10)
 
 # 运行 SE-CCM
-seccm = SECCM(surrogate_method="aaft", n_surrogates=99, alpha=0.05, fdr=True)
+seccm = SECCM(surrogate_method="iaaft", n_surrogates=99, alpha=0.05, fdr=True)
 seccm.fit(data)
 
 # 对照真实邻接矩阵评估
@@ -249,10 +249,10 @@ surrogate:
 
 surrogate_robustness:
   systems: [logistic, lorenz, henon, rossler, hindmarsh_rose, fitzhugh_nagumo, kuramoto]
-  methods: [fft, aaft, iaaft, timeshift, cycle_shuffle]
+  methods: [fft, aaft, iaaft, timeshift, random_reorder, cycle_shuffle, twin, phase, small_shuffle, truncated_fourier]
   n_surrogates: 99
   N: 10
-  n_reps: 10
+  n_reps: 5
   # ... 各子实验的扫描值
 ```
 
@@ -263,7 +263,7 @@ surrogate_robustness:
 from surrogate_ccm.generators import generate_network, create_system
 
 adj = generate_network("ER", N=10, seed=0, p=0.3)    # -> (10, 10) 二值矩阵
-system = create_system("lorenz", adj, coupling=1.0)
+system = create_system("lorenz", adj, coupling=3.0)
 data = system.generate(T=3000, transient=1000, seed=0,
                        noise_std=0.0, dyn_noise_std=0.0)  # -> (3000, 10)
 
@@ -305,8 +305,9 @@ seccm = SECCM(surrogate_method="auto", n_surrogates=99, alpha=0.05, fdr=True)
 seccm.fit(data)
 metrics = seccm.score(adj)     # -> 字典：AUROC, TPR, FPR 等
 
-# 启用收敛过滤（可选，更保守）
-seccm = SECCM(convergence_filter=True, convergence_threshold=0.0)
+# 收敛过滤默认启用（convergence_filter=True）
+# 如需关闭：
+seccm = SECCM(convergence_filter=False)
 seccm.fit(data)
 
 # 访问内部结果

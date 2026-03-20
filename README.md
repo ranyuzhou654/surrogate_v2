@@ -58,11 +58,11 @@ from surrogate_ccm.testing import SECCM
 
 # Create a 10-node coupled Lorenz network
 adj = generate_network("ER", N=10, seed=42, p=0.3)
-system = create_system("lorenz", adj, coupling=1.0)
+system = create_system("lorenz", adj, coupling=3.0)
 data = system.generate(T=3000, transient=1000, seed=42)  # shape: (3000, 10)
 
 # Run SE-CCM
-seccm = SECCM(surrogate_method="aaft", n_surrogates=99, alpha=0.05, fdr=True)
+seccm = SECCM(surrogate_method="iaaft", n_surrogates=99, alpha=0.05, fdr=True)
 seccm.fit(data)
 
 # Evaluate against ground truth
@@ -145,7 +145,7 @@ surrogate-ccm/
 | `coupling` | `--experiment coupling` | Sweep coupling strength across systems and topologies |
 | `noise` | `--experiment noise` | Effect of observation noise on detection accuracy |
 | `topology` | `--experiment topology` | Compare ER, WS, ring topologies at varying network sizes |
-| `surrogate` | `--experiment surrogate` | Compare 7 surrogate methods across 7 systems |
+| `surrogate` | `--experiment surrogate` | Compare 10 surrogate methods across 7 systems |
 | `robustness` | `--experiment robustness` | Ablation: sweep T, coupling, obs-noise, dyn-noise |
 
 ### Robustness Experiment Details
@@ -261,10 +261,10 @@ surrogate:
 
 surrogate_robustness:
   systems: [logistic, lorenz, henon, rossler, hindmarsh_rose, fitzhugh_nagumo, kuramoto]
-  methods: [fft, aaft, iaaft, timeshift, cycle_shuffle]
+  methods: [fft, aaft, iaaft, timeshift, random_reorder, cycle_shuffle, twin, phase, small_shuffle, truncated_fourier]
   n_surrogates: 99
   N: 10
-  n_reps: 10
+  n_reps: 5
   # ... sweep values per sub-experiment
 ```
 
@@ -275,7 +275,7 @@ surrogate_robustness:
 from surrogate_ccm.generators import generate_network, create_system
 
 adj = generate_network("ER", N=10, seed=0, p=0.3)    # -> (10, 10) binary matrix
-system = create_system("lorenz", adj, coupling=1.0)
+system = create_system("lorenz", adj, coupling=3.0)
 data = system.generate(T=3000, transient=1000, seed=0,
                        noise_std=0.0, dyn_noise_std=0.0)  # -> (3000, 10)
 
@@ -322,8 +322,9 @@ seccm = SECCM(surrogate_method="auto", n_surrogates=99, alpha=0.05, fdr=True)
 seccm.fit(data)
 metrics = seccm.score(adj)     # -> dict with AUROC, TPR, FPR, etc.
 
-# With convergence filtering (optional, more conservative)
-seccm = SECCM(convergence_filter=True, convergence_threshold=0.0)
+# Convergence filtering is enabled by default (convergence_filter=True)
+# To disable it:
+seccm = SECCM(convergence_filter=False)
 seccm.fit(data)
 
 # Access internals
