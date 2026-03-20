@@ -92,24 +92,26 @@ def multivariate_iaaft_surrogate(X, rng=None, max_iter=100):
     X = np.asarray(X, dtype=float)
     T, N = X.shape
 
-    # Target amplitudes (FFT)
+    # Target amplitudes and phase offsets (FFT)
     target_F = np.fft.rfft(X, axis=0)
     target_amplitudes = np.abs(target_F)
+    # Phase differences between each variable and the reference (var 0)
+    # Preserving these locks the cross-spectral structure
+    target_phase_offsets = np.angle(target_F) - np.angle(target_F[:, 0:1])
 
     # Sorted values per variable (for amplitude matching)
     sorted_vals = [np.sort(X[:, j]) for j in range(N)]
-    sort_indices = [np.argsort(X[:, j]) for j in range(N)]
 
     # Initialize with multivariate FFT surrogate
     surrogate = multivariate_fft_surrogate(X, rng=rng)
 
     for _ in range(max_iter):
-        # Step 1: Enforce spectral structure (shared phases)
+        # Step 1: Enforce spectral structure with cross-spectral preservation
         F_surr = np.fft.rfft(surrogate, axis=0)
-        phases = np.angle(F_surr)
-        # Use mean phase across variables (preserve cross-spectral coherence)
-        # Actually, just use amplitudes from original + phases from current
-        F_surr = target_amplitudes * np.exp(1j * phases)
+        # Use phase from reference variable (var 0) as common phase
+        ref_phase = np.angle(F_surr[:, 0:1])  # (n_freq, 1)
+        # Reconstruct each variable: original amplitude + common phase + original offset
+        F_surr = target_amplitudes * np.exp(1j * (ref_phase + target_phase_offsets))
         surrogate_spectral = np.fft.irfft(F_surr, n=T, axis=0)
 
         # Step 2: Enforce amplitude distribution (rank ordering)
