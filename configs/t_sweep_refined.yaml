@@ -1,0 +1,98 @@
+# ============================================================
+# Refined T-sweep follow-up experiment
+# ============================================================
+# Purpose:
+# - Re-run the robustness study with T_sweep as the primary target
+# - Use the reduced surrogate method pool suggested by the latest analysis
+# - Increase repetitions / surrogate count for more stable ranking
+#
+# Important:
+# - The current "robustness" runner always executes 4 sub-experiments.
+# - To keep this config focused on T_sweep, the other 3 sweeps are
+#   collapsed to single baseline values.
+#
+# Run:
+#   python run_experiments.py --experiment robustness --config configs/t_sweep_refined.yaml
+# ============================================================
+
+seed: 42
+
+time_series:
+  T: 3000
+  transient: 1000
+
+surrogate_robustness:
+  systems:
+    - logistic
+    - lorenz
+    - henon
+    - rossler
+    - hindmarsh_rose
+    - fitzhugh_nagumo
+    - kuramoto
+
+  # Reduced main-method pool from T_sweep analysis:
+  # - fft / iaaft / truncated_fourier are the strongest spectral baselines
+  # - twin is retained as a complementary nonlinear/topology-preserving null
+  methods:
+    - fft
+    - iaaft
+    - truncated_fourier
+    - twin
+
+  # Higher resolution for surrogate-based scores
+  n_surrogates: 499
+  N: 10
+  topology: ER
+  er_p: 0.3
+  n_reps: 20
+  fdr: false
+
+  # Main SECCM settings recommended by the latest T_sweep review
+  seccm_kwargs:
+    theiler_w: auto
+    adaptive_rho: true
+    adaptive_rho_quantile: 0.90
+    convergence_filter: true
+    convergence_threshold: 0.05
+    E_method: simplex
+    iaaft_max_iter: 200
+
+  # ----------------------------------------------------------
+  # Sub-A: main target of this config
+  # ----------------------------------------------------------
+  T_sweep:
+    values: [500, 1000, 2000, 3000, 5000]
+    transient: 1000
+
+  # ----------------------------------------------------------
+  # Sub-B/C/D: collapsed to baseline singletons so that
+  # the robustness runner remains effectively T-focused.
+  # ----------------------------------------------------------
+  coupling_sweep:
+    logistic: [0.1]
+    lorenz: [3.0]
+    henon: [0.05]
+    rossler: [0.2]
+    hindmarsh_rose: [0.1]
+    fitzhugh_nagumo: [0.05]
+    kuramoto: [0.1]
+
+  obs_noise_sweep:
+    values: [0.0]
+
+  dyn_noise_sweep:
+    values: [0.0]
+
+  # Default coupling when not sweeping coupling
+  coupling:
+    logistic: 0.1
+    lorenz: 3.0
+    henon: 0.05
+    rossler: 0.2
+    hindmarsh_rose: 0.1
+    fitzhugh_nagumo: 0.05
+    kuramoto: 0.1
+
+n_jobs: 8
+output_dir: results_v3/t_sweep_refined
